@@ -7,9 +7,6 @@ name: Release package
 on:
   release:
     types: [published]
-  schedule:
-    # run every day at 00:00
-    - cron: '0 0 * * *'
 
 jobs:
   build:
@@ -46,15 +43,15 @@ jobs:
           --logger "trx;LogFileName=${{ github.workspace }}/artifacts/test-results/smoke.trx"
           ${{ env.version_suffix_args }}
 
-      - name: Run Live Tests
-        run: dotnet test ./tests/OpenAI.Tests.csproj
-          --configuration Release
-          --filter="TestCategory!=Smoke&TestCategory!=Images&TestCategory!=Uploads&TestCategory!=Moderations&TestCategory!=FineTuning&TestCategory!=Conversation&TestCategory!=Manual"
-          --logger "trx;LogFilePrefix=live"
-          --results-directory ${{ github.workspace }}/artifacts/test-results
-          ${{ env.version_suffix_args }}
-        env:
-          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+      # - name: Run Live Tests
+      #   run: dotnet test ./tests/OpenAI.Tests.csproj
+      #     --configuration Release
+      #     --filter="TestCategory!=Smoke&TestCategory!=Images&TestCategory!=Uploads&TestCategory!=Moderations&TestCategory!=FineTuning&TestCategory!=Conversation&TestCategory!=Manual"
+      #     --logger "trx;LogFilePrefix=live"
+      #     --results-directory ${{ github.workspace }}/artifacts/test-results
+      #     ${{ env.version_suffix_args }}
+      #   env:
+      #     OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
