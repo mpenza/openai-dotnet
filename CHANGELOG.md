@@ -1,5 +1,9 @@
 # Release History
 
+## 2.1.0-beta.3.1 (2024-12-03)
+
+Custom release based on latest repository version.
+
 ## 2.1.0-beta.3 (Unreleased)
 
 ### Features added
