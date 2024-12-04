@@ -1,5 +1,9 @@
 # Release History
 
+## 2.1.0-beta.3.3 (2024-12-04)
+
+Expose custom ChatCompletionOption properties until this library gets official support.
+
 ## 2.1.0-beta.3.2 (2024-12-04)
 
 Add EOS as a stop reason for Llama LLMs. Copied this origin [pull request](https://github.com/openai/openai-dotnet/pull/267).
