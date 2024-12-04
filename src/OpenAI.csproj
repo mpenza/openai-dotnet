@@ -4,6 +4,7 @@
     The official .NET library for the OpenAI service API.
     </Description>
     <AssemblyTitle>SDK Code Generation OpenAI</AssemblyTitle>
+    <PackageId>mpenza.OpenAI</PackageId>
     <PackageTags>OpenAI;openai-dotnet;ChatGPT;Dall-E</PackageTags>
 
     <VersionPrefix>2.1.0</VersionPrefix>
