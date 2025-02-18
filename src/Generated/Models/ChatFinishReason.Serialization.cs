@@ -20,7 +20,7 @@ namespace OpenAI.Chat
 
         public static ChatFinishReason ToChatFinishReason(this string value)
         {
-            if (StringComparer.OrdinalIgnoreCase.Equals(value, "stop")) return ChatFinishReason.Stop;
+            if (StringComparer.OrdinalIgnoreCase.Equals(value, "stop") || StringComparer.OrdinalIgnoreCase.Equals(value, "eos")) return ChatFinishReason.Stop;
             if (StringComparer.OrdinalIgnoreCase.Equals(value, "length")) return ChatFinishReason.Length;
             if (StringComparer.OrdinalIgnoreCase.Equals(value, "tool_calls")) return ChatFinishReason.ToolCalls;
             if (StringComparer.OrdinalIgnoreCase.Equals(value, "content_filter")) return ChatFinishReason.ContentFilter;

@@ -27,6 +27,45 @@
   - Fixed serialization issues with `ConversationItem` creation of system and assistant messages. ([bf3f0ed](https://github.com/openai/openai-dotnet/commit/bf3f0eddeda1957a998491e36d7fb551e99be916))
   - Fixed an issue causing a deadlock when calling the `RealtimeConversationSession`'s `SendInputAudio` method overload that takes a `BinaryData` parameter. ([f491c2d](https://github.com/openai/openai-dotnet/commit/f491c2d5a3894953e0bc112431ea3844a64496da))
 
+## 2.1.0-beta.3.3 (2024-12-04)
+
+Expose custom ChatCompletionOption properties until this library gets official support.
+
+## 2.1.0-beta.3.2 (2024-12-04)
+
+Add EOS as a stop reason for Llama LLMs. Copied this origin [pull request](https://github.com/openai/openai-dotnet/pull/267).
+
+## 2.1.0-beta.3.1 (2024-12-03)
+
+Custom release based on latest repository version.
+
+## 2.1.0-beta.3 (Unreleased)
+
+### Features added
+
+- OpenAI.Assistants:
+  - Added a `Content` property to `RunStepFileSearchResult` ([`step_details.tool_calls.file_search.results.content` in the REST API](https://platform.openai.com/docs/api-reference/run-steps/step-object)). (commit_hash)
+    - When using an Assistant with the File Search tool, you can use this property to retrieve the contents of the File Search results that were used by the model.
+  - Added `FileSearchRankingOptions` and `FileSearchResults` properties to `RunStepDetailsUpdate`. (commit_hash)
+
+### Breaking Changes in Preview APIs
+
+- OpenAI.RealtimeConversation:
+  - Renamed the `From*()` factory methods on `ConversationContentPart` to `Create*Part()` for consistency. (commit_hash)
+  - Removed an extraneous `toolCallId` parameter from `ConversationItem.CreateSystemMessage()`. (commit_hash)
+- OpenAI.Assistants:
+  - Renamed `RunStepType` to `RunStepKind`. (commit_hash)
+  - Changed `RunStepKind` from an "extensible enum" to a regular enum. (commit_hash)
+  - Renamed the `ToolCallId` property of `RunStepToolCall` to `Id`. (commit_hash)
+  - Renamed the `ToolKind` property of `RunStepToolCall` to `Kind`. (commit_hash)
+  - Replaced the `FileSearchRanker` and `FileSearchScoreThreshold` properties of `RunStepToolCall` with a new `FileSearchRankingOptions` property that contains both values to make it clearer how they are related. (commit_hash)
+
+### Bugs fixed
+
+- OpenAI.RealtimeConversation:
+  - Fixed serialization issues with `ConversationItem` creation of system and assistant messages. (commit_hash)
+
+
 ## 2.1.0-beta.2 (2024-11-04)
 
 ### Features added
