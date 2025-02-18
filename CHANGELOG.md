@@ -1,6 +1,6 @@
 # Release History
 
-## 2.1.0-1 (2024-02-18) --MJP--
+## 2.1.0-mjp.1 (2024-02-18) --MJP--
 
 Updated standard release with our custom changes
 
