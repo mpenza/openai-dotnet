@@ -1,5 +1,9 @@
 # Release History
 
+## 2.1.0-1 (2024-02-18) --MJP--
+
+Updated standard release with our custom changes
+
 ## 2.1.0 (2024-12-04)
 
 ### Features added
@@ -27,15 +31,15 @@
   - Fixed serialization issues with `ConversationItem` creation of system and assistant messages. ([bf3f0ed](https://github.com/openai/openai-dotnet/commit/bf3f0eddeda1957a998491e36d7fb551e99be916))
   - Fixed an issue causing a deadlock when calling the `RealtimeConversationSession`'s `SendInputAudio` method overload that takes a `BinaryData` parameter. ([f491c2d](https://github.com/openai/openai-dotnet/commit/f491c2d5a3894953e0bc112431ea3844a64496da))
 
-## 2.1.0-beta.3.3 (2024-12-04)
+## 2.1.0-beta.3.3 (2024-12-04) --MJP--
 
 Expose custom ChatCompletionOption properties until this library gets official support.
 
-## 2.1.0-beta.3.2 (2024-12-04)
+## 2.1.0-beta.3.2 (2024-12-04) --MJP--
 
 Add EOS as a stop reason for Llama LLMs. Copied this origin [pull request](https://github.com/openai/openai-dotnet/pull/267).
 
-## 2.1.0-beta.3.1 (2024-12-03)
+## 2.1.0-beta.3.1 (2024-12-03) --MJP--
 
 Custom release based on latest repository version.
 
