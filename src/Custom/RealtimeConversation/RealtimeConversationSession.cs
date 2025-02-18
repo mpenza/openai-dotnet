@@ -20,8 +20,8 @@ public partial class RealtimeConversationSession : IDisposable
     private readonly RealtimeConversationClient _parentClient;
     private readonly Uri _endpoint;
     private readonly ApiKeyCredential _credential;
-    private readonly object _sendingAudioLock = new();
-    private bool _isSendingAudio = false;
+    private readonly SemaphoreSlim _audioSendSemaphore = new(1, 1);
+    private bool _isSendingAudioStream = false;
 
     internal bool ShouldBufferTurnResponseData { get; set; }
 
@@ -47,13 +47,13 @@ public partial class RealtimeConversationSession : IDisposable
     public virtual async Task SendInputAudioAsync(Stream audio, CancellationToken cancellationToken = default)
     {
         Argument.AssertNotNull(audio, nameof(audio));
-        lock (_sendingAudioLock)
+        using (await _audioSendSemaphore.AutoReleaseWaitAsync(cancellationToken).ConfigureAwait(false))
         {
-            if (_isSendingAudio)
+            if (_isSendingAudioStream)
             {
                 throw new InvalidOperationException($"Only one stream of audio may be sent at once.");
             }
-            _isSendingAudio = true;
+            _isSendingAudioStream = true;
         }
         try
         {
@@ -75,9 +75,9 @@ public partial class RealtimeConversationSession : IDisposable
         }
         finally
         {
-            lock (_sendingAudioLock)
+            using (await _audioSendSemaphore.AutoReleaseWaitAsync(cancellationToken).ConfigureAwait(false))
             {
-                _isSendingAudio = false;
+                _isSendingAudioStream = false;
             }
         }
     }
@@ -85,13 +85,13 @@ public partial class RealtimeConversationSession : IDisposable
     public virtual void SendInputAudio(Stream audio, CancellationToken cancellationToken = default)
     {
         Argument.AssertNotNull(audio, nameof(audio));
-        lock (_sendingAudioLock)
+        using (_audioSendSemaphore.AutoReleaseWait(cancellationToken))
         {
-            if (_isSendingAudio)
+            if (_isSendingAudioStream)
             {
                 throw new InvalidOperationException($"Only one stream of audio may be sent at once.");
             }
-            _isSendingAudio = true;
+            _isSendingAudioStream = true;
         }
         try
         {
@@ -113,9 +113,9 @@ public partial class RealtimeConversationSession : IDisposable
         }
         finally
         {
-            lock (_sendingAudioLock)
+            using (_audioSendSemaphore.AutoReleaseWait(cancellationToken))
             {
-                _isSendingAudio = false;
+                _isSendingAudioStream = false;
             }
         }
     }
@@ -130,18 +130,17 @@ public partial class RealtimeConversationSession : IDisposable
     public virtual async Task SendInputAudioAsync(BinaryData audio, CancellationToken cancellationToken = default)
     {
         Argument.AssertNotNull(audio, nameof(audio));
-        lock (_sendingAudioLock)
+        using (await _audioSendSemaphore.AutoReleaseWaitAsync(cancellationToken).ConfigureAwait(false))
         {
-            if (_isSendingAudio)
+            if (_isSendingAudioStream)
             {
                 throw new InvalidOperationException($"Cannot send a standalone audio chunk while a stream is already in progress.");
             }
-            _isSendingAudio = true;
+            // TODO: consider automatically limiting/breaking size of chunk (as with streaming)
+            InternalRealtimeClientEventInputAudioBufferAppend internalCommand = new(audio);
+            BinaryData requestData = ModelReaderWriter.Write(internalCommand);
+            await SendCommandAsync(requestData, cancellationToken.ToRequestOptions()).ConfigureAwait(false);
         }
-        // TODO: consider automatically limiting/breaking size of chunk (as with streaming)
-        InternalRealtimeClientEventInputAudioBufferAppend internalCommand = new(audio);
-        BinaryData requestData = ModelReaderWriter.Write(internalCommand);
-        await SendCommandAsync(requestData, cancellationToken.ToRequestOptions()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -154,18 +153,17 @@ public partial class RealtimeConversationSession : IDisposable
     public virtual void SendInputAudio(BinaryData audio, CancellationToken cancellationToken = default)
     {
         Argument.AssertNotNull(audio, nameof(audio));
-        lock (_sendingAudioLock)
+        using (_audioSendSemaphore.AutoReleaseWait(cancellationToken))
         {
-            if (_isSendingAudio)
+            if (_isSendingAudioStream)
             {
                 throw new InvalidOperationException($"Cannot send a standalone audio chunk while a stream is already in progress.");
             }
-            _isSendingAudio = true;
+            // TODO: consider automatically limiting/breaking size of chunk (as with streaming)
+            InternalRealtimeClientEventInputAudioBufferAppend internalCommand = new(audio);
+            BinaryData requestData = ModelReaderWriter.Write(internalCommand);
+            SendCommand(requestData, cancellationToken.ToRequestOptions());
         }
-        // TODO: consider automatically limiting/breaking size of chunk (as with streaming)
-        InternalRealtimeClientEventInputAudioBufferAppend internalCommand = new(audio);
-        BinaryData requestData = ModelReaderWriter.Write(internalCommand);
-        SendCommand(requestData, cancellationToken.ToRequestOptions());
     }
 
     public virtual async Task ClearInputAudioAsync(CancellationToken cancellationToken = default)
@@ -278,36 +276,33 @@ public partial class RealtimeConversationSession : IDisposable
         SendCommand(internalCommand, cancellationToken);
     }
 
+    public virtual async Task StartResponseAsync(ConversationResponseOptions options, CancellationToken cancellationToken = default)
+    {
+        InternalRealtimeClientEventResponseCreate internalCommand = new(
+            kind: InternalRealtimeClientEventType.ResponseCreate,
+            eventId: null,
+            additionalBinaryDataProperties: null,
+            response: options);
+        await SendCommandAsync(internalCommand, cancellationToken).ConfigureAwait(false);
+    }
     public virtual async Task StartResponseAsync(CancellationToken cancellationToken = default)
     {
-        InternalRealtimeClientEventResponseCreateResponse internalOptions = new();
-        InternalRealtimeClientEventResponseCreate internalCommand = new(internalOptions);
-        await SendCommandAsync(internalCommand, cancellationToken).ConfigureAwait(false);
+        await StartResponseAsync(new ConversationResponseOptions(), cancellationToken).ConfigureAwait(false);
     }
 
-    public virtual void StartResponse(CancellationToken cancellationToken = default)
+    public virtual void StartResponse(ConversationResponseOptions options, CancellationToken cancellationToken = default)
     {
-        InternalRealtimeClientEventResponseCreateResponse internalOptions = new();
-        InternalRealtimeClientEventResponseCreate internalCommand = new(internalOptions);
+        InternalRealtimeClientEventResponseCreate internalCommand = new(
+            kind: InternalRealtimeClientEventType.ResponseCreate,
+            eventId: null,
+            additionalBinaryDataProperties: null,
+            response: options);
         SendCommand(internalCommand, cancellationToken);
     }
 
-    public virtual async Task StartResponseAsync(ConversationSessionOptions sessionOptionOverrides, CancellationToken cancellationToken = default)
+    public void StartResponse(CancellationToken cancellationToken = default)
     {
-        Argument.AssertNotNull(sessionOptionOverrides, nameof(sessionOptionOverrides));
-        InternalRealtimeClientEventResponseCreateResponse internalOptions
-            = InternalRealtimeClientEventResponseCreateResponse.FromSessionOptions(sessionOptionOverrides);
-        InternalRealtimeClientEventResponseCreate internalCommand = new(internalOptions);
-        await SendCommandAsync(internalCommand, cancellationToken).ConfigureAwait(false);
-    }
-
-    public virtual void StartResponse(ConversationSessionOptions sessionOptionOverrides, CancellationToken cancellationToken = default)
-    {
-        Argument.AssertNotNull(sessionOptionOverrides, nameof(sessionOptionOverrides));
-        InternalRealtimeClientEventResponseCreateResponse internalOptions
-            = InternalRealtimeClientEventResponseCreateResponse.FromSessionOptions(sessionOptionOverrides);
-        InternalRealtimeClientEventResponseCreate internalCommand = new(internalOptions);
-        SendCommand(internalCommand, cancellationToken);
+        StartResponse(new ConversationResponseOptions(), cancellationToken);
     }
 
     public virtual async Task CancelResponseAsync(CancellationToken cancellationToken = default)
@@ -326,7 +321,7 @@ public partial class RealtimeConversationSession : IDisposable
     {
         await foreach (ClientResult protocolEvent in ReceiveUpdatesAsync(cancellationToken.ToRequestOptions()))
         {
-            ConversationUpdate nextUpdate = ConversationUpdate.FromResponse(protocolEvent.GetRawResponse());
+            ConversationUpdate nextUpdate = (ConversationUpdate)protocolEvent;
             yield return nextUpdate;
         }
     }
